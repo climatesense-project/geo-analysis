@@ -47,3 +47,11 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# derived data - too big to git
+/data/*.gpkg
+
+# logs of little use in git
+/output/*.txt
+
+

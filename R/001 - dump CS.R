@@ -6,7 +6,7 @@ library(sf)
 start_time <- Sys.time()
 vystup <- "./output/benchmark_cs.txt"
 
-cat(paste(Sys.time(), "start\n"), file = vystup, append = T)
+cat(paste("\n", Sys.time(), "start\n"), file = vystup, append = T)
 
 # the real thing ... 
 query_basis = spq_init(
@@ -25,14 +25,16 @@ for (year in 2000:lubridate::year(Sys.Date())) {
                               "dbp" = "http://dbpedia.org/property/")) %>% 
       spq_add("?review rdf:type schema:ClaimReview") %>%
       spq_add("?review schema:mentions ?mentioned") %>% 
-      spq_add("?review schema:datePublished ?date") %>% 
+      spq_add("?review schema:datePublished ?review_date") %>% 
       spq_add("?review schema:author ?reviewer") %>% 
       spq_add("?reviewer schema:name ?org") %>% 
-      spq_add("?review schema:itemReviewed ?claim") %>% 
-      spq_add("?claim cs:isClimateRelated true") %>% # who cares about climate unrelated claims?
+      spq_add("?review schema:itemReviewed ?claim") %>%
+      spq_add("?claim cs:isClimateRelated ?climate_related") %>% # who cares about climate unrelated claims?
+#      spq_add("?review schema:text ?review_text") %>%  # full dump crashes server; commenting
+#      spq_add("?claim schema:text ?claim_text") %>% # full dump crashes server; commenting
       spq_add("?mentioned geo:geometry ?geo") %>% 
       spq_set(year_review = paste0("'", year, "'")) %>%  # current year of iteration
-      spq_filter(str_sub(as.character(date), 1, 4) == year_review) %>% 
+      spq_filter(str_sub(as.character(review_date), 1, 4) == year_review) %>% 
       spq_select(.spq_duplicate = "distinct") # no duplicities thank you
       
    

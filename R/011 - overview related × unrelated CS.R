@@ -11,9 +11,12 @@ csense <- st_read("./data/cs_data_dump.gpkg") %>%
              review_date <= Sys.Date()) %>% 
    mutate(climate_related = climate_related == "1") 
 
-# entire world as basemap, 1: 20M
+# entire world as basemap
 world <- gisco_get_countries(resolution = "01") %>% 
-   rmapshaper::ms_simplify(keep = 1/100, keep_shapes = T)
+   rmapshaper::ms_simplify(keep = 1/100, keep_shapes = T) %>% 
+   st_transform(3857) %>% 
+   st_buffer(-1) %>%  # get rid of the ugly slash in Antarctis
+   st_transform(4326) # back to the safety of WGS84
 
 # spatial overview points
 ggplot() +
@@ -33,8 +36,9 @@ ggplot() +
                        length(unique(csense$review)) %>% format(big.mark = ","),
                        "]"),
         caption = "© EuroGeographics for the administrative boundaries") +
-   theme(legend.position="bottom") +
-   theme(plot.caption = element_text(face = "italic")) +
+   theme(legend.position="bottom",
+         axis.text = element_blank(),
+         plot.caption = element_text(face = "italic")) +
    guides(color = guide_legend(override.aes = list(alpha = 1, size = 2)))
 
 ggsave("./output/spatial overview.png",
@@ -75,12 +79,12 @@ world %>%
                        length(unique(csense$review)) %>% format(big.mark = ","),
                        "]"),
         caption = "© EuroGeographics for the administrative boundaries") +
-   theme(legend.position="bottom") +
-   theme(plot.caption = element_text(face = "italic"))
+   theme(legend.position="bottom",
+         axis.text = element_blank(),
+         plot.caption = element_text(face = "italic"))
 
 ggsave("./output/spatial share.png",
        width = 2000, height = 1500, units = "px")
-
 
 # spatial share = country total mentions
 world %>% 
@@ -105,12 +109,56 @@ world %>%
                        length(unique(csense$review)) %>% format(big.mark = ","),
                        "]"),
         caption = "© EuroGeographics for the administrative boundaries") +
-   theme(legend.position="bottom") +
-   theme(plot.caption = element_text(face = "italic"))
+   theme(legend.position="bottom",
+         axis.text = element_blank(),
+         plot.caption = element_text(face = "italic"))
 
 ggsave("./output/spatial count any.png",
        width = 2000, height = 1500, units = "px")
 
+world_time <- world %>% 
+   st_join(csense) %>% 
+   st_drop_geometry() %>% 
+   mutate(period = case_when(review_date < as.Date('2018-12-31') ~ "2015 - 2018",
+                             review_date < as.Date('2020-12-31') ~ "2019 - 2020",
+                             review_date < as.Date('2022-12-31') ~ "2021 - 2022",
+                             T ~ "2023 - 2026",
+                             )) %>% 
+   group_by(ISO3_CODE, period, climate_related) %>% 
+   summarise(count = sum(climate_related)) %>% 
+   select(ISO3_CODE, count)
+
+# climate related mentions over time periods
+world %>% 
+   # fallback to include detault zeroes for all combinations - so that rare events are not omitted
+   inner_join(expand.grid(ISO3_CODE = unique(world_time$ISO3_CODE), period = unique(world_time$period), default = 0)) %>% 
+   left_join(world_time) %>% 
+   mutate(count = count + default) %>% 
+   ggplot() +
+   geom_sf(aes(fill = count), color = NA) +
+   scale_fill_viridis_c("Climate related mention (log scaled):",
+                        breaks = c(1, 1e3 , 250e3),
+                        labels = scales::label_comma(),
+                        trans = scales::pseudo_log_trans(sigma = 0.001)) +
+   coord_sf(crs = st_crs("ESRI:54019")) +
+   theme_minimal() +
+   labs(title = paste0("Count of mentions [",
+                       sum(csense$climate_related) %>% format(big.mark = ","),
+                       "] of a state or equivalent [",
+                       length(world$CNTR_ID) %>% format(big.mark = ","),
+                       "]\nmentioned in climate related claim [",
+                       length(unique(csense$claim[csense$climate_related])) %>% format(big.mark = ","),
+                       "] reviews [",
+                       length(unique(subset(csense, climate_related)$review)) %>% format(big.mark = ","),
+                       "]"),
+        caption = "© EuroGeographics for the administrative boundaries") +
+   facet_wrap(~period, ncol = 2) +
+   theme(legend.position="bottom",
+         axis.text = element_blank(),
+         plot.caption = element_text(face = "italic"))
+
+ggsave("./output/spatial count time.png",
+       width = 2000, height = 1500, units = "px")
 
 # temporal overview
 csense %>% 

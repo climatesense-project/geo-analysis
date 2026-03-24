@@ -2,6 +2,14 @@
 
 Proof of Concept of geographic analysis of climate related misinformation.
 
+<p align="center">
+  <img src="https://github.com/climatesense-project/geo-analysis/blob/main/output/spatial%20share.png?raw=true" alt="spatial share overview"/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/climatesense-project/geo-analysis/blob/main/output/spatial%20count%20time.png?raw=true" alt="spatial count over time"/>
+</p>
+
 Repo structure is:
 - `R` = #rstats code to be run
 - `data` = local storage of interim data
@@ -12,10 +20,6 @@ From the technical point of view the most relevant files are:
 - `/R/010 - overview dumped CD.R` builds on results of script 001 to create a basic visualization of climate related claims (only).
 - `/R/011 - overview related × unrelated CS.R` builds on results of script 001 to create a comparative analysis of climate related and unrelated claims.
 - `/data/cs_data_dump.gpkg` which is the actual data dump (not included in git)
-
-<p align="center">
-  <img src="https://github.com/climatesense-project/geo-analysis/blob/main/output/spatial%20share.png?raw=true" alt="spatial share overview"/>
-</p>
 
 From GIS point of view the most relevant files are:
 - `/output/spatial overview.png` geographical overview of any mention as individual place

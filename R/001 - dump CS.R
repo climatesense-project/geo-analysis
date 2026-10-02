@@ -10,7 +10,8 @@ cat(paste("\n", Sys.time(), "start\n"), file = vystup, append = T)
 
 # the real thing ... 
 query_basis = spq_init(
-   endpoint = "http://data.climatesense-project.eu/sparql"
+   endpoint = "https://data.climatesense-project.eu/sparql",
+   request_control = spq_control_request(request_type = "body-form")
 )
 
 # iterate over history of interest
